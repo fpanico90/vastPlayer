@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VAST Static Player</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video {
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      object-fit: contain;
+      background: black;
+    }
+    #log {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      font-size: 12px;
+      font-family: monospace;
+      color: lime;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="video" autoplay muted controls playsinline></video>
+  <div id="log"></div>
+
+  <script>
+    const log = msg => {
+      const el = document.getElementById("log");
+      el.innerText += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+    };
+
+    const vastXml = `
+<VAST version="3.0">
+  <Ad id="demo">
+    <InLine>
+      <AdSystem version="1.0">Demo</AdSystem>
+      <AdTitle><![CDATA[ Demo ]]></AdTitle>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:17.320</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[ https://vasttester.iabtechlab.com/fixtures/video/360p30.mp4 ]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>
+`;
+
+    try {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(vastXml, "application/xml");
+      const mediaFile = xml.querySelector("MediaFile[type='video/mp4']");
+      if (mediaFile) {
+        const mp4 = mediaFile.textContent.trim();
+        log("🎬 MP4 trovato: " + mp4);
+        const video = document.getElementById("video");
+        video.src = mp4;
+        video.play()
+          .then(() => log("▶️ Avvio riproduzione"))
+          .catch(err => log("⚠️ Autoplay bloccato: " + err.message));
+      } else {
+        log("❌ Nessun MediaFile MP4 trovato nel VAST.");
+      }
+    } catch (err) {
+      log("❌ Errore nel parsing VAST: " + err.message);
+    }
+  </script>
+</body>
+</html>
